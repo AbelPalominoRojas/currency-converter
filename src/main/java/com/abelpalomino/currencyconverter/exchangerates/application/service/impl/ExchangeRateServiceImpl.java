@@ -7,6 +7,7 @@ import com.abelpalomino.currencyconverter.exchangerates.application.mapper.Excha
 import com.abelpalomino.currencyconverter.exchangerates.application.service.ExchangeRateService;
 import com.abelpalomino.currencyconverter.exchangerates.domain.model.ExchangeRate;
 import com.abelpalomino.currencyconverter.exchangerates.domain.port.ExchangeRatePort;
+import com.abelpalomino.currencyconverter.shared.application.dto.exception.DataNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -30,7 +31,8 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
     @Override
     public Mono<ExchangeRateDto> findById(Long id) {
         return exchangeRatePort.findById(id)
-                .map(exchangeRateMapper::toDto);
+                .map(exchangeRateMapper::toDto)
+                .switchIfEmpty(buildNotFoundError(id));
     }
 
     @Override
@@ -51,7 +53,8 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
         return exchangeRatePort.findById(id)
                 .map(exchangeRate -> buildExchangeRate(exchangeRate, exchangeRateBody))
                 .flatMap(exchangeRatePort::save)
-                .map(exchangeRateMapper::toDto);
+                .map(exchangeRateMapper::toDto)
+                .switchIfEmpty(buildNotFoundError(id));
     }
 
     private void calculateDestinationAmount(ExchangeRate exchangeRate) {
@@ -68,5 +71,9 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
         calculateDestinationAmount(exchangeRate);
 
         return exchangeRate;
+    }
+
+    private static Mono<ExchangeRateDto> buildNotFoundError(Long id) {
+        return Mono.error(new DataNotFoundException("Exchange rate not found for id: " + id));
     }
 }
