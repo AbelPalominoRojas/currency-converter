@@ -12,3 +12,17 @@ CREATE TABLE IF NOT EXISTS exchange_rates (
 
     CONSTRAINT pk_exchange_rates primary key (id)
 );
+
+
+CREATE TABLE users (
+    id BIGINT AUTO_INCREMENT,
+    name VARCHAR(255) NOT NULL,
+    last_name VARCHAR(255),
+    email VARCHAR(255) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP,
+
+    CONSTRAINT pk_users primary key (id),
+    CONSTRAINT unique_email_users unique (email)
+);

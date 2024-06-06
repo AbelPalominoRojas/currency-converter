@@ -58,13 +58,6 @@ public class ExchangeRateController {
                     schema = @Schema(implementation = ArgumentNotValidError.class)
             )
     )
-    @ApiResponse(
-            responseCode = StatusCode.NOT_FOUND,
-            content = @Content(
-                    mediaType = MediaType.APPLICATION_JSON_VALUE,
-                    schema = @Schema(implementation = GeneralError.class)
-            )
-    )
     @PostMapping
     public Mono<ResponseEntity<ExchangeRateDto>> create(@Valid @RequestBody ExchangeRateBodyDto exchangeRateBody) {
         return exchangeRateService.create(exchangeRateBody)

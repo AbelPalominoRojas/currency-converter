@@ -3,6 +3,7 @@ package com.abelpalomino.currencyconverter.shared.infrastructure.web;
 import com.abelpalomino.currencyconverter.shared.application.dto.exception.ArgumentNotValidError;
 import com.abelpalomino.currencyconverter.shared.application.dto.exception.DataNotFoundException;
 import com.abelpalomino.currencyconverter.shared.application.dto.exception.GeneralError;
+import com.abelpalomino.currencyconverter.shared.application.dto.exception.UniqueConstraintException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -37,11 +38,13 @@ public class ApplicationExceptionHandler {
 
     @ExceptionHandler(DataNotFoundException.class)
     public Mono<ResponseEntity<GeneralError>> handleDataNotFound(DataNotFoundException ex) {
-        GeneralError response = new GeneralError();
-
-        response.setMessage(ex.getMessage());
-
         return Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(response));
+                .body(new GeneralError(ex.getMessage())));
+    }
+
+    @ExceptionHandler(UniqueConstraintException.class)
+    public Mono<ResponseEntity<GeneralError>> handleDataNotFound(UniqueConstraintException ex) {
+        return Mono.just(ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new GeneralError(ex.getMessage())));
     }
 }
