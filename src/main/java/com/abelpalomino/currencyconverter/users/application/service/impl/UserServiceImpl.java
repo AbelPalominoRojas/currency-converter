@@ -38,7 +38,6 @@ public class UserServiceImpl implements UserService {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setCreatedAt(LocalDateTime.now());
 
-        log.info("Password: {}", user.getPassword());
         return userPort.findByEmail(user.getEmail())
                 .flatMap(u -> {
                     if (u != null) {
@@ -56,12 +55,6 @@ public class UserServiceImpl implements UserService {
         return userPort.save(user).map(userMapper::toDto);
     }
 
-    @Override
-    public Mono<UserDto> findByEmail(String email) {
-        return userPort.findByEmail(email)
-                .map(userMapper::toDto)
-                .switchIfEmpty(Mono.error(new DataNotFoundException("User not found with email: " + email)));
-    }
 
     @Override
     public Mono<UserSecurityDto> login(AuthDto authDto) {

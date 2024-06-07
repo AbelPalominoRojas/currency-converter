@@ -9,7 +9,5 @@ import reactor.core.publisher.Mono;
 public interface UserService {
     Mono<UserDto> create(UserBodyDto userBody);
 
-    Mono<UserDto> findByEmail(String email);
-
     Mono<UserSecurityDto> login(AuthDto authDto);
 }

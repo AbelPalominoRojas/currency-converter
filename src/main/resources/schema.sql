@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS exchange_rates (
 );
 
 
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id BIGINT AUTO_INCREMENT,
     name VARCHAR(255) NOT NULL,
     last_name VARCHAR(255),
