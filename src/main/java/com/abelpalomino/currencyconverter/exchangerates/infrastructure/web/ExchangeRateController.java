@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
@@ -59,8 +60,11 @@ public class ExchangeRateController {
             )
     )
     @PostMapping
-    public Mono<ResponseEntity<ExchangeRateDto>> create(@Valid @RequestBody ExchangeRateBodyDto exchangeRateBody) {
-        return exchangeRateService.create(exchangeRateBody)
+    public Mono<ResponseEntity<ExchangeRateDto>> create(
+            @Valid @RequestBody ExchangeRateBodyDto exchangeRateBody,
+            ServerHttpRequest request) {
+
+        return exchangeRateService.create(exchangeRateBody, request)
                 .map(exchangeRate -> ResponseEntity
                         .status(HttpStatus.CREATED)
                         .body(exchangeRate)
@@ -87,8 +91,9 @@ public class ExchangeRateController {
     @PutMapping("/{id}")
     public Mono<ResponseEntity<ExchangeRateDto>> update(
             @PathVariable("id") Long id,
-            @Valid @RequestBody ExchangeRateBodyDto exchangeRateBody) {
-        return exchangeRateService.update(id, exchangeRateBody)
+            @Valid @RequestBody ExchangeRateBodyDto exchangeRateBody,
+            ServerHttpRequest request) {
+        return exchangeRateService.update(id, exchangeRateBody, request)
                 .map(ResponseEntity::ok);
     }
 

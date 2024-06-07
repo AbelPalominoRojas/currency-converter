@@ -8,7 +8,9 @@ import com.abelpalomino.currencyconverter.exchangerates.application.service.Exch
 import com.abelpalomino.currencyconverter.exchangerates.domain.model.ExchangeRate;
 import com.abelpalomino.currencyconverter.exchangerates.domain.port.ExchangeRatePort;
 import com.abelpalomino.currencyconverter.shared.application.dto.exception.DataNotFoundException;
+import com.abelpalomino.currencyconverter.shared.infrastructure.web.security.JwtHelper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -21,6 +23,7 @@ import java.time.LocalDateTime;
 public class ExchangeRateServiceImpl implements ExchangeRateService {
     private final ExchangeRatePort exchangeRatePort;
     private final ExchangeRateDtoMapper exchangeRateMapper;
+    private final JwtHelper jwtHelper;
 
     @Override
     public Flux<ExchangeRateMediumDto> findAll() {
@@ -36,10 +39,11 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
     }
 
     @Override
-    public Mono<ExchangeRateDto> create(ExchangeRateBodyDto exchangeRateBody) {
+    public Mono<ExchangeRateDto> create(ExchangeRateBodyDto exchangeRateBody, ServerHttpRequest request) {
         ExchangeRate exchangeRate = exchangeRateMapper.toEntity(exchangeRateBody);
 
         exchangeRate.setCreatedAt(LocalDateTime.now());
+        exchangeRate.setCreatedBy(buildUsername(request));
         calculateDestinationAmount(exchangeRate);
 
 
@@ -49,9 +53,9 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
 
 
     @Override
-    public Mono<ExchangeRateDto> update(Long id, ExchangeRateBodyDto exchangeRateBody) {
+    public Mono<ExchangeRateDto> update(Long id, ExchangeRateBodyDto exchangeRateBody, ServerHttpRequest request) {
         return exchangeRatePort.findById(id)
-                .map(exchangeRate -> buildExchangeRate(exchangeRate, exchangeRateBody))
+                .map(exchangeRate -> buildExchangeRate(exchangeRate, exchangeRateBody, request))
                 .flatMap(exchangeRatePort::save)
                 .map(exchangeRateMapper::toDto)
                 .switchIfEmpty(buildNotFoundError(id));
@@ -64,10 +68,14 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
         exchangeRate.setDestinationAmount(destinationAmount);
     }
 
-    private ExchangeRate buildExchangeRate(ExchangeRate exchangeRate, ExchangeRateBodyDto exchangeRateBody) {
+    private ExchangeRate buildExchangeRate(
+            ExchangeRate exchangeRate,
+            ExchangeRateBodyDto exchangeRateBody,
+            ServerHttpRequest request) {
         exchangeRateMapper.updateEntity(exchangeRate, exchangeRateBody);
 
         exchangeRate.setUpdatedAt(LocalDateTime.now());
+        exchangeRate.setUpdatedBy(buildUsername(request));
         calculateDestinationAmount(exchangeRate);
 
         return exchangeRate;
@@ -75,5 +83,17 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
 
     private static Mono<ExchangeRateDto> buildNotFoundError(Long id) {
         return Mono.error(new DataNotFoundException("Exchange rate not found for id: " + id));
+    }
+
+    private String buildUsername(ServerHttpRequest request) {
+        String authHeader = request.getHeaders().getFirst("Authorization");
+
+        if (authHeader != null && authHeader.toLowerCase().startsWith("bearer ")) {
+            String authToken = authHeader.substring(7);
+
+            return jwtHelper.getUserNameFromToken(authToken);
+        }
+
+        return null;
     }
 }
