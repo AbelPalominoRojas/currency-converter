@@ -2,13 +2,13 @@ package com.abelpalomino.currencyconverter.shared.infrastructure.web.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -37,22 +37,25 @@ public class JwtHelper {
         SecretKey key = getSecretKey();
 
         return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(user.getUsername())
-                .setIssuedAt(createDate)
-                .setExpiration(calendar.getTime())
-                .signWith(key)
+                .header()
+                .type("JWT")
+                .and()
+                .claims(claims)
+                .subject(user.getUsername())
+                .issuedAt(createDate)
+                .expiration(calendar.getTime())
+                .signWith(key, Jwts.SIG.HS256)
                 .compact();
     }
 
     public Claims getClaimsFromToken(String token) {
         SecretKey key = getSecretKey();
 
-        return Jwts.parserBuilder()
-                .setSigningKey(key)
+            return Jwts.parser()
+                .verifyWith(key)
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
     public String getUserNameFromToken(String token){
@@ -73,7 +76,9 @@ public class JwtHelper {
     }
 
     private SecretKey getSecretKey(){
-        return Keys.hmacShaKeyFor(this.secretKey.getBytes(StandardCharsets.UTF_8));
+        byte[] keyBytes = Decoders.BASE64.decode(this.secretKey);
+
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 
 }
